@@ -1,5 +1,3 @@
-const MAX_NUM_CARDS: usize = 5; 
-
 #[derive(Debug, PartialEq, PartialOrd, Eq, Ord)]
 enum PokerHands {
     HighCard(Vec<u8>),
@@ -23,7 +21,11 @@ fn main() {
             "3S 4S 5D 6H JH",
             "3H 4H 5C 6C JD",
         ];
-    // let mut hands = ["4S 5H 6C 8D KH", "2S 4H 6S 4D JH"];
+    let mut hands = ["2S 8H 2D 8D 3H", "4S 5H 4C 8S 5D"];
+    let mut hands = ["4S 5H 4C 8D 4H", "4D AH 3S 2D 5C"];
+    let mut hands = ["4C 6H 7D 8D 5H", "2S 4S 5S 6S 7S"];
+    let mut hands = ["KS AH AS AD AC", "4H AH 3H 2H 5H"];
+
     println!("{:?}", winning_hands(&hands));
 }
 
@@ -60,28 +62,17 @@ fn check_flush(hand: &str) -> bool {
     is_flush
 }
 
-// convert all cards to a unicode value (excluding suit)
-// as the card '10' is the only card with multiple chars
-// it's easier to just convert this to next unicode char
-// after '9' which is ':'
-// '9'                 => 57
-// '10'    => ':'      => 58
-// 'J'     => ';'      => 59
-// 'Q'     => ';'      => 60
-// 'K'     => ';'      => 61
-// 'A'     => ';'      => 62
 fn get_card_vals(hand: &str) -> Vec<u8> {
     let cards = hand.replace(&SUITS, "");
-    let cards = cards.replace("10", ":");
-    let cards = cards.replace("J", ";");
-    let cards = cards.replace("Q", "<");
-    let cards = cards.replace("K", "=");
-    let cards = cards.replace("A", ">");
+    let cards = cards.replace("J", "11");
+    let cards = cards.replace("Q", "12");
+    let cards = cards.replace("K", "13");
+    let cards = cards.replace("A", "14");
     let cards = cards.split(' ').collect::<Vec<&str>>();
     // println!("{:?}", cards);
 
     let mut cards = cards.iter()
-        .map(|n| n.chars().next().unwrap() as u8)
+        .map(|n| n.parse().unwrap())
         .collect::<Vec<u8>>();
     
     // println!("{:?}", cards);
@@ -94,12 +85,30 @@ fn get_hand_type(hand: &str) -> PokerHands {
     let is_flush = check_flush(hand);
     let hand_vals = get_card_vals(hand);
     
-    // check if hand is a straight
-    let is_straight = hand_vals
+    // check if hand is a straight (ace is high)
+    let mut is_straight = hand_vals
         .iter()
         .enumerate()
         .skip(1)
         .all(|(index, val)| *val == hand_vals[index-1] + 1);
+    
+    // check if hand is straight (ace is low)
+    // only if this hand has an ace and it wasn't a straight with ace high
+    if hand_vals[4] == 14 && !is_straight {
+        println!("Checking for straight with ace low");
+
+        // remove ace value (14) which should be at end of sorted list
+        // and then push it to the front of the sorted list
+        let mut hand_vals_clone = hand_vals.clone();
+        hand_vals_clone.pop();
+        hand_vals_clone.insert(0,1);
+
+        is_straight = hand_vals_clone
+            .iter()
+            .enumerate()
+            .skip(1)
+            .all(|(index, val)| *val == hand_vals_clone[index-1] + 1);
+    }
     
     // check for all same values (pair, 2pair, 3kind, 4kind, fullhouse)
     // do this iteratively by checking previous whether iter matches current
