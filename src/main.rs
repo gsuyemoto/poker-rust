@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 const MAX_NUM_CARDS: usize = 5; 
 
 #[derive(Debug, PartialEq, PartialOrd, Eq, Ord)]
@@ -22,33 +20,33 @@ fn main() {
     let mut hands = [
             "4D 5S 6S 8D 3C",
             "2S 4C 7S 9H 10H",
-            "3S 4S 5D 7H JH",
+            "3S 4S 5D 6H JH",
             "3H 4H 5C 6C JD",
         ];
     // let mut hands = ["4S 5H 6C 8D KH", "2S 4H 6S 4D JH"];
-    winning_hand(&hands);
+    println!("{:?}", winning_hands(&hands));
 }
 
-pub fn winning_hand<'a>(hands: &[&'a str]) {
-    let mut all_hand_types: Vec<PokerHands> = Vec::new();
-
-    for h in hands {
-        let is_flush          = check_flush(h);
-        let mut card_vals     = get_card_vals(h);
-        let hand_type         = get_hand_type(is_flush, &mut card_vals);
-        println!("{:?}", hand_type);
+pub fn winning_hands<'a>(hands: &[&'a str]) -> Vec<&'a str> {
+    let mut winning_hands_list: Vec<&'a str> = Vec::new();
+    let mut max_hand_index: usize  = 0;
+ 
+    for (hand_index, hand_val) in hands.into_iter().enumerate() {
+        let new_hand = get_hand_type(hand_val);
+        println!("{:?}", new_hand);
         
-        all_hand_types.push(hand_type);
+        let current_max_hand = get_hand_type(hands[max_hand_index]);
+        if new_hand > current_max_hand {
+            max_hand_index = hand_index;
+            winning_hands_list.clear();
+            winning_hands_list.push(hand_val);
+        }
+        else if new_hand == current_max_hand {
+            winning_hands_list.push(hand_val);
+        }
     }
     
-    // do a fold on vec to push answers into accumulator
-    let mut answer = HashMap::new();
-    answer.insert(0, &all_hand_types[0]);
-    
-    // all_hand_types.iter()
-    //     .fold(answer, )
-    
-    println!("{:?}", all_hand_types.iter().max());
+    winning_hands_list
 }
 
 const SUITS: [char; 4] = ['H', 'D', 'S', 'C'];
@@ -91,7 +89,11 @@ fn get_card_vals(hand: &str) -> Vec<u8> {
     cards
 }
 
-fn get_hand_type(is_flush: bool, hand_vals: &mut Vec<u8>) -> PokerHands {
+// fn get_hand_type(is_flush: bool, hand_vals: &mut Vec<u8>) -> PokerHands {
+fn get_hand_type(hand: &str) -> PokerHands {
+    let is_flush = check_flush(hand);
+    let hand_vals = get_card_vals(hand);
+    
     // check if hand is a straight
     let is_straight = hand_vals
         .iter()
